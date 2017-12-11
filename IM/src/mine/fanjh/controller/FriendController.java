@@ -1,6 +1,8 @@
 package mine.fanjh.controller;
 
 import java.sql.Connection;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
+import com.sun.javafx.collections.MappingChange.Map;
 
 import mine.fanjh.DAO.FriendDAO;
 import mine.fanjh.DAO.TokenDAO;
@@ -72,6 +75,7 @@ public class FriendController{
 			}
 			
 			if(list.size() > 0) {
+				HashMap<Integer, FriendApply> cache = new HashMap<Integer,FriendApply>();
 				int []userIDs = new int[list.size()];
 				for(int i = 0;i < list.size();++i) {
 					FriendApply item = list.get(i);
@@ -80,12 +84,14 @@ public class FriendController{
 					}else {
 						userIDs[i] = item.applyID;
 					}
+					cache.put(userIDs[i], item);
 				}
+				
 				List<User> users = userDAO.getUserMessages(connection, userIDs);
-				for(int i = 0;i < list.size();++i) {
+				for(int i = 0;i < users.size();++i) {
 					User user = users.get(i);
 					handleUserAvator(user);
-					list.get(i).friend = user;
+					cache.get(user.id).friend = user;
 				}
 			}
 			
@@ -149,6 +155,7 @@ public class FriendController{
 			}
 			
 			if(list.size() > 0) {
+				HashMap<Integer, FriendRelationship> cache = new HashMap<Integer,FriendRelationship>();
 				int []userIDs = new int[list.size()];
 				for(int i = 0;i < list.size();++i) {
 					FriendRelationship item = list.get(i);
@@ -157,12 +164,13 @@ public class FriendController{
 					}else {
 						userIDs[i] = item.applyID;
 					}
+					cache.put(userIDs[i], item);
 				}
 				List<User> users = userDAO.getUserMessages(connection, userIDs);
 				for(int i = 0;i < list.size();++i) {
 					User user = users.get(i);
 					handleUserAvator(user);
-					list.get(i).friend = user;
+					cache.get(user.id).friend = user;
 				}
 			}
 			

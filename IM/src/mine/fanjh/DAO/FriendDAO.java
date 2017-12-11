@@ -108,7 +108,7 @@ public class FriendDAO {
 
 	public List<FriendApply> getFriendApplyList(Connection connection, int userID) throws Exception {
 
-		String sql = "select * from friend_apply where confirm_id = ? or apply_id = ?";
+		String sql = "select * from friend_apply where confirm_id = ? or apply_id = ? order by create_time desc";
 
 		PreparedStatement preparedStatement = connection.prepareStatement(sql);
 		preparedStatement.setInt(1, userID);
@@ -127,7 +127,7 @@ public class FriendDAO {
 	
 	public List<FriendApply> getFriendApplyList(Connection connection, int userID, int minID) throws Exception {
 
-		String sql = "select * from friend_apply where (confirm_id = ? or apply_id = ?) and id > ?";
+		String sql = "select * from friend_apply where (confirm_id = ? or apply_id = ?) and id > ? order by create_time desc";
 
 		PreparedStatement preparedStatement = connection.prepareStatement(sql);
 		preparedStatement.setInt(1, userID);
@@ -147,7 +147,7 @@ public class FriendDAO {
 
 	public List<FriendRelationship> getFriendRelationshipList(Connection connection, int userID) throws Exception {
 
-		String sql = "select * from friend_relationship where confirm_id = ? or apply_id = ?";
+		String sql = "select * from friend_relationship where confirm_id = ? or apply_id = ? order by create_time desc";
 
 		PreparedStatement preparedStatement = connection.prepareStatement(sql);
 		preparedStatement.setInt(1, userID);
@@ -166,7 +166,7 @@ public class FriendDAO {
 	
 	public List<FriendRelationship> getFriendRelationshipList(Connection connection, int userID, int minID) throws Exception {
 
-		String sql = "select * from friend_relationship where (confirm_id = ? or apply_id = ?) and id > ?";
+		String sql = "select * from friend_relationship where (confirm_id = ? or apply_id = ?) and id > ? order by create_time desc";
 
 		PreparedStatement preparedStatement = connection.prepareStatement(sql);
 		preparedStatement.setInt(1, userID);
