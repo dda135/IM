@@ -25,10 +25,11 @@ public class CommonMessage {
 	private BaseMessage message;
 
 	public BaseMessage getMessage() {
-		if(null != message){
+		if(null == message){
 			Gson gson = new Gson();
 			BaseMessage baseMessage = gson.fromJson(content,BaseMessage.class);
 			System.out.println("baseMessage-->" + baseMessage.toString());
+			System.out.println("baseMessage-->" + baseMessage.type);
 			switch (baseMessage.type){
 				case BaseMessage.TYPE_TEXT:
 					message = gson.fromJson(content,TextMessage.class);
@@ -40,6 +41,7 @@ public class CommonMessage {
 					message = gson.fromJson(content, ApplyAgreeMessage.class);
 					break;
 				default:
+					message = baseMessage;
 					break;
 			}
 		}

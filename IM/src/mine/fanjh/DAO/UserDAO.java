@@ -63,9 +63,11 @@ public class UserDAO {
 				stringBuilder.append("?)");
 			}
 		}
-
+		stringBuilder.append(" order by id asc");
+		System.out.println(stringBuilder.toString());
 		PreparedStatement preparedStatement = connection.prepareStatement(stringBuilder.toString());
 		for(int i = 1;i <= length;++i) {
+			System.out.println(userIDs[i - 1]);
 			preparedStatement.setInt(i, userIDs[i-1]);
 		}
 
