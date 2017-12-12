@@ -49,7 +49,6 @@ public class ReceiverThread extends Thread {
 				dataInputStream.readFully(data, 0, len);
 
 				MessageProtocol.MessageProto messageProto = MessageProtocol.MessageProto.parseFrom(data);
-				System.out.println(messageProto.getType() + "-->" + messageProto.getContent());
 
 				int type = messageProto.getType();
 				switch (type) {
@@ -57,13 +56,15 @@ public class ReceiverThread extends Thread {
 					handleConnectReq(messageProto);
 					break;
 				case ProtoType.SEND_REQ:
+					System.out.println("sendReq-->" + messageProto.getType() + "-->" + messageProto.getContent());
 					handleSendReq(messageProto);
 					break;
 				case ProtoType.PING_REQ:
-					System.out.println("pingReq-->"+messageProto.getContent());
+					System.out.println("pingReq-->" + messageProto.getContent());
 					senderThread.sendMessage(sendMessage(ProtoType.PING_ACK, messageProto.getId(), null));
 					break;
 				case ProtoType.MESSAGE_ACK:
+					System.out.println("messageAck-->" + messageProto.getContent());
 					handleMessageAck(messageProto);
 					break;
 				default:
@@ -98,12 +99,11 @@ public class ReceiverThread extends Thread {
 	}
 
 	private void handleConnectReq(MessageProto messageProto) {
-		System.out.println("MessageProto-->" + messageProto.toString());
 		clientID = messageProto.getContent();
 		OnlineClientID.put(clientID, senderThread);
 		senderThread.setClientID(clientID);
 		senderThread.sendMessage(sendMessage(ProtoType.CONNECT_ACK, 0, ""));
-		System.out.println("clientID-->"+clientID);
+		System.out.println("clientID-->" + clientID);
 		int userID = Integer.parseInt(Utils.getIdAndToken(clientID)[0]);
 		MessageProto offlineMessage = null;
 		LinkedList<MessageProto> protos = OfflineMessage.offlineMessages.get(userID);
@@ -122,20 +122,20 @@ public class ReceiverThread extends Thread {
 		Gson gson = new Gson();
 		CommonMessage arrivedMessage = gson.fromJson(messageProto.getContent(), CommonMessage.class);
 		int businessType = arrivedMessage.getMessage().type;
-		
+
 		int serverID;
-		
+
 		switch (businessType) {
 		case BaseMessage.TYPE_APPLY:
 			ApplyMessage applyMessage = (ApplyMessage) arrivedMessage.getMessage();
-			serverID = handleApplyMessageBusiness(arrivedMessage,applyMessage);
-			System.out.println("serverID---" + serverID);
-			if(serverID > 0) {
+			serverID = handleApplyMessageBusiness(arrivedMessage, applyMessage);
+			if (serverID > 0) {
 				applyMessage.serverID = serverID;
 				arrivedMessage.content = gson.toJson(applyMessage);
-				transmitMessage(arrivedMessage.receiver_id, getMessageProto(messageProto.getId(),messageProto.getType(),gson.toJson(arrivedMessage)));
+				transmitMessage(arrivedMessage.receiver_id,
+						getMessageProto(messageProto.getId(), messageProto.getType(), gson.toJson(arrivedMessage)));
 				senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
-		
+
 				ApplySuccessMessage applySuccessMessage = new ApplySuccessMessage();
 				applySuccessMessage.serverID = serverID;
 				applySuccessMessage.applyID = arrivedMessage.sender_id;
@@ -149,17 +149,23 @@ public class ReceiverThread extends Thread {
 				MessageProto proto = sendMessage(ProtoType.MESSAGE, 1, gson.toJson(commonMessage));
 				OfflineMessage.saveOfflineMessage(arrivedMessage.sender_id, proto);
 				senderThread.sendMessage(proto);
+			}else if(serverID == -1) {
+				//更新操作
+				transmitMessage(arrivedMessage.receiver_id,
+						getMessageProto(messageProto.getId(), messageProto.getType(), gson.toJson(arrivedMessage)));
+				senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
 			}
 			break;
 		case BaseMessage.TYPE_APPLY_AGREE:
 			serverID = handleApplyConfirmMessageBusiness(arrivedMessage);
-			if(serverID > 0) {
+			if (serverID > 0) {
 				ApplyAgreeMessage applyAgreeMessage = (ApplyAgreeMessage) arrivedMessage.getMessage();
 				applyAgreeMessage.serverID = serverID;
 				arrivedMessage.content = gson.toJson(applyAgreeMessage);
-				transmitMessage(arrivedMessage.receiver_id, getMessageProto(messageProto.getId(), messageProto.getType(), gson.toJson(arrivedMessage)));
+				transmitMessage(arrivedMessage.receiver_id,
+						getMessageProto(messageProto.getId(), messageProto.getType(), gson.toJson(arrivedMessage)));
 				senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
-				
+
 				ApplyAgreeSuccessMessage applyAgreeSuccessMessage = new ApplyAgreeSuccessMessage();
 				applyAgreeSuccessMessage.serverID = serverID;
 				applyAgreeSuccessMessage.applyID = arrivedMessage.receiver_id;
@@ -177,27 +183,27 @@ public class ReceiverThread extends Thread {
 			break;
 		case BaseMessage.TYPE_APPLY_REJECT:
 			boolean result = handleApplyRejectMessageBusiness(arrivedMessage);
-			if(result) {
+			if (result) {
 				transmitMessage(arrivedMessage.receiver_id, messageProto);
 				senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
 			}
 			break;
+		case BaseMessage.TYPE_TEXT:
+			transmitMessage(arrivedMessage.receiver_id, messageProto);
+			senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
+			break;
 		default:
 			break;
 		}
-		//失败的话应该导致客户端发送超时
-		
+		// 失败的话应该导致客户端发送超时
+
 	}
-	
-	private MessageProto getMessageProto(long id,int type,String content) {
-		return MessageProtocol.MessageProto.newBuilder().
-				setId(id).
-				setType(type).
-				setContent(content).
-				build();
+
+	private MessageProto getMessageProto(long id, int type, String content) {
+		return MessageProtocol.MessageProto.newBuilder().setId(id).setType(type).setContent(content).build();
 	}
-	
-	private void transmitMessage(int receiverID,MessageProto messageProto) {
+
+	private void transmitMessage(int receiverID, MessageProto messageProto) {
 		SenderThread transmit = OnlineClientID.getSender(receiverID);
 		OfflineMessage.saveOfflineMessage(receiverID, messageProto);
 		if (null == transmit) {
@@ -214,50 +220,59 @@ public class ReceiverThread extends Thread {
 		OfflineMessage.removeOfflineMessage(userID, messageProto.getId());
 	}
 
-	private int handleApplyMessageBusiness(CommonMessage message,ApplyMessage applyMessage) {
-		int result = -1;
+	private int handleApplyMessageBusiness(CommonMessage message, ApplyMessage applyMessage) {
+		int result = -2;
 		Connection connection = null;
 		try {
 			connection = JDBC.openConnection();
 			FriendDAO friendDAO = new FriendDAO();
 			int applyID = message.sender_id;
 			int confirmID = message.receiver_id;
-			if(!friendDAO.isFriendApplyExist(connection, applyID, confirmID)) {
-				result = friendDAO.addFriendApply(connection, applyID, confirmID,TextUtils.isTextEmpty(applyMessage.text)?"未填写":applyMessage.text);
+			FriendApply friendApply = friendDAO.getExistFriendApply(connection, applyID, confirmID);
+			if (null == friendApply) {
+				result = friendDAO.addFriendApply(connection, applyID, confirmID,
+						TextUtils.isTextEmpty(applyMessage.text) ? "未填写" : applyMessage.text);
 				connection.commit();
-				System.out.println("isFriendApplyExist-->false" );
-			}else {
-				System.out.println("isFriendApplyExist-->true" );
+			} else {
+				switch (friendApply.status) {
+				case FriendApply.STATUS_REJECT:
+					boolean updateResult = friendDAO.updateFriendApplyStatus(connection, applyID, confirmID, FriendApply.STATUS_APPLYING);
+					connection.commit();
+					return updateResult?-1:result;
+
+				default:
+					break;
+				}
 			}
-		}catch (Exception e) {
+		} catch (Exception e) {
 			// TODO: handle exception
 			e.printStackTrace();
-			System.out.println("e-->" + e.toString());
 			JDBC.rollback(connection);
-		}finally {
+		} finally {
 			JDBC.close(connection);
 		}
 		return result;
 	}
-	
+
 	private boolean handleApplyRejectMessageBusiness(CommonMessage message) {
 		Connection connection = null;
 		try {
 			connection = JDBC.openConnection();
 			FriendDAO friendDAO = new FriendDAO();
-			boolean result = friendDAO.updateFriendApplyStatus(connection, message.receiver_id, message.sender_id, FriendApply.STATUS_REJECT);
+			boolean result = friendDAO.updateFriendApplyStatus(connection, message.receiver_id, message.sender_id,
+					FriendApply.STATUS_REJECT);
 			connection.commit();
 			return result;
-		}catch (Exception e) {
+		} catch (Exception e) {
 			// TODO: handle exception
 			e.printStackTrace();
 			JDBC.rollback(connection);
-		}finally {
+		} finally {
 			JDBC.close(connection);
 		}
 		return false;
 	}
-	
+
 	private int handleApplyConfirmMessageBusiness(CommonMessage message) {
 		Connection connection = null;
 		int result = -1;
@@ -266,22 +281,23 @@ public class ReceiverThread extends Thread {
 			FriendDAO friendDAO = new FriendDAO();
 			int applyID = message.receiver_id;
 			int confirmID = message.sender_id;
-			if(friendDAO.isFriendExist(connection, applyID, confirmID)) {
+			if (friendDAO.isFriendExist(connection, applyID, confirmID)) {
 				return result;
 			}
-			boolean isUpdateSucceed = friendDAO.updateFriendApplyStatus(connection, applyID, confirmID, FriendApply.STATUS_CONFIRM);
-			if(isUpdateSucceed) {
+			boolean isUpdateSucceed = friendDAO.updateFriendApplyStatus(connection, applyID, confirmID,
+					FriendApply.STATUS_CONFIRM);
+			if (isUpdateSucceed) {
 				result = friendDAO.addFriend(connection, applyID, confirmID);
 			}
 			connection.commit();
-		}catch (Exception e) {
+		} catch (Exception e) {
 			// TODO: handle exception
 			e.printStackTrace();
 			JDBC.rollback(connection);
-		}finally {
+		} finally {
 			JDBC.close(connection);
 		}
 		return result;
 	}
-	
+
 }
