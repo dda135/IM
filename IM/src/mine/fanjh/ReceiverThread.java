@@ -1,12 +1,16 @@
 package mine.fanjh;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.sql.Connection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.UUID;
 
 import com.google.gson.Gson;
 
@@ -20,6 +24,8 @@ import mine.fanjh.DO.message.ApplyMessage;
 import mine.fanjh.DO.message.ApplySuccessMessage;
 import mine.fanjh.DO.message.BaseMessage;
 import mine.fanjh.DO.message.CommonMessage;
+import mine.fanjh.DO.message.ImageMessage;
+import mine.fanjh.utils.Const;
 import mine.fanjh.utils.JDBC;
 import mine.fanjh.utils.TextUtils;
 
@@ -50,6 +56,13 @@ public class ReceiverThread extends Thread {
 
 				MessageProtocol.MessageProto messageProto = MessageProtocol.MessageProto.parseFrom(data);
 
+				byte[] fileBytes = null;
+				if (messageProto.getContentLength() > 0) {
+					int length = (int) messageProto.getContentLength();
+					fileBytes = new byte[length];
+					dataInputStream.readFully(fileBytes, 0, length);
+				}
+
 				int type = messageProto.getType();
 				switch (type) {
 				case ProtoType.CONNECT_REQ:
@@ -57,7 +70,7 @@ public class ReceiverThread extends Thread {
 					break;
 				case ProtoType.SEND_REQ:
 					System.out.println("sendReq-->" + messageProto.getType() + "-->" + messageProto.getContent());
-					handleSendReq(messageProto);
+					handleSendReq(messageProto, fileBytes);
 					break;
 				case ProtoType.PING_REQ:
 					System.out.println("pingReq-->" + messageProto.getContent());
@@ -118,7 +131,7 @@ public class ReceiverThread extends Thread {
 		}
 	}
 
-	private void handleSendReq(MessageProto messageProto) {
+	private void handleSendReq(MessageProto messageProto, byte[] fileBytes) {
 		Gson gson = new Gson();
 		CommonMessage arrivedMessage = gson.fromJson(messageProto.getContent(), CommonMessage.class);
 		int businessType = arrivedMessage.getMessage().type;
@@ -149,8 +162,8 @@ public class ReceiverThread extends Thread {
 				MessageProto proto = sendMessage(ProtoType.MESSAGE, 1, gson.toJson(commonMessage));
 				OfflineMessage.saveOfflineMessage(arrivedMessage.sender_id, proto);
 				senderThread.sendMessage(proto);
-			}else if(serverID == -1) {
-				//更新操作
+			} else if (serverID == -1) {
+				// 更新操作
 				transmitMessage(arrivedMessage.receiver_id,
 						getMessageProto(messageProto.getId(), messageProto.getType(), gson.toJson(arrivedMessage)));
 				senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
@@ -190,6 +203,11 @@ public class ReceiverThread extends Thread {
 			break;
 		case BaseMessage.TYPE_TEXT:
 			transmitMessage(arrivedMessage.receiver_id, messageProto);
+			senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
+			break;
+		case BaseMessage.TYPE_IMAGE:
+			MessageProto newProto = handleReceiverImageMessage(messageProto,arrivedMessage, fileBytes);
+			transmitMessage(arrivedMessage.receiver_id, newProto);
 			senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
 			break;
 		default:
@@ -236,9 +254,10 @@ public class ReceiverThread extends Thread {
 			} else {
 				switch (friendApply.status) {
 				case FriendApply.STATUS_REJECT:
-					boolean updateResult = friendDAO.updateFriendApplyStatus(connection, applyID, confirmID, FriendApply.STATUS_APPLYING);
+					boolean updateResult = friendDAO.updateFriendApplyStatus(connection, applyID, confirmID,
+							FriendApply.STATUS_APPLYING);
 					connection.commit();
-					return updateResult?-1:result;
+					return updateResult ? -1 : result;
 
 				default:
 					break;
@@ -298,6 +317,56 @@ public class ReceiverThread extends Thread {
 			JDBC.close(connection);
 		}
 		return result;
+	}
+
+	private MessageProto handleReceiverImageMessage(MessageProto messageProto,CommonMessage arrivedMessage, byte[] fileBytes) {
+
+		if (fileBytes != null) {
+			try {
+				System.out.println("content_length--->"+fileBytes.length);
+				
+				ImageMessage imageMessage = (ImageMessage) arrivedMessage.getMessage();
+
+				String fileName = imageMessage.fileName;
+
+				String newFilename = UUID.randomUUID().toString() + fileName.substring(fileName.lastIndexOf('.'));
+				String realPath = System.getProperty("catalina.home") + "/webapps/IM/sendImage/";
+				File temp = new File(realPath, newFilename);
+				System.out.println("realPath-->"+temp.getAbsolutePath());
+				if (!temp.getParentFile().exists()) {
+					temp.getParentFile().mkdir();
+				}
+				if (!temp.exists()) {
+					temp.createNewFile();
+				}
+
+				FileOutputStream fos = new FileOutputStream(temp);
+				fos.write(fileBytes);
+				fos.flush();
+				fos.close();
+				
+				ImageMessage message = new ImageMessage();
+				message.width = imageMessage.width;
+				message.height = imageMessage.height;
+				message.imageUrl = Const.IMAGE_PREFIX + "sendImage/" + newFilename;
+				
+				arrivedMessage.content = new Gson().toJson(message);
+				
+				MessageProto proto = MessageProto.newBuilder().
+						setId(messageProto.getId()).
+						setType(ProtoType.MESSAGE).
+						setContent(new Gson().toJson(arrivedMessage)).
+						build();
+				
+				return proto;
+				
+			} catch (Exception e) {
+				// TODO: handle exception
+				e.printStackTrace();
+			}
+
+		}
+		return null;
 	}
 
 }
