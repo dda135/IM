@@ -22,7 +22,7 @@ public class CommonMessage {
 	public int send_status;
 	public long time;
 
-	private BaseMessage message;
+	private transient BaseMessage message;
 
 	public BaseMessage getMessage() {
 		if(null == message){
@@ -39,6 +39,9 @@ public class CommonMessage {
 					break;
 				case BaseMessage.TYPE_APPLY_AGREE:
 					message = gson.fromJson(content, ApplyAgreeMessage.class);
+					break;
+				case BaseMessage.TYPE_IMAGE:
+					message = gson.fromJson(content, ImageMessage.class);
 					break;
 				default:
 					message = baseMessage;

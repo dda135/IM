@@ -37,6 +37,11 @@ public final class MessageProtocol {
      */
     com.google.protobuf.ByteString
         getContentBytes();
+
+    /**
+     * <code>int64 content_length = 4;</code>
+     */
+    long getContentLength();
   }
   /**
    * Protobuf type {@code fanjh.mine.proto.MessageProto}
@@ -54,6 +59,7 @@ public final class MessageProtocol {
       id_ = 0L;
       type_ = 0;
       content_ = "";
+      contentLength_ = 0L;
     }
 
     @java.lang.Override
@@ -101,6 +107,11 @@ public final class MessageProtocol {
               java.lang.String s = input.readStringRequireUtf8();
 
               content_ = s;
+              break;
+            }
+            case 32: {
+
+              contentLength_ = input.readInt64();
               break;
             }
           }
@@ -179,6 +190,15 @@ public final class MessageProtocol {
       }
     }
 
+    public static final int CONTENT_LENGTH_FIELD_NUMBER = 4;
+    private long contentLength_;
+    /**
+     * <code>int64 content_length = 4;</code>
+     */
+    public long getContentLength() {
+      return contentLength_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -200,6 +220,9 @@ public final class MessageProtocol {
       if (!getContentBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, content_);
       }
+      if (contentLength_ != 0L) {
+        output.writeInt64(4, contentLength_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -218,6 +241,10 @@ public final class MessageProtocol {
       }
       if (!getContentBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, content_);
+      }
+      if (contentLength_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(4, contentLength_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -241,6 +268,8 @@ public final class MessageProtocol {
           == other.getType());
       result = result && getContent()
           .equals(other.getContent());
+      result = result && (getContentLength()
+          == other.getContentLength());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -259,6 +288,9 @@ public final class MessageProtocol {
       hash = (53 * hash) + getType();
       hash = (37 * hash) + CONTENT_FIELD_NUMBER;
       hash = (53 * hash) + getContent().hashCode();
+      hash = (37 * hash) + CONTENT_LENGTH_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getContentLength());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -394,6 +426,8 @@ public final class MessageProtocol {
 
         content_ = "";
 
+        contentLength_ = 0L;
+
         return this;
       }
 
@@ -419,6 +453,7 @@ public final class MessageProtocol {
         result.id_ = id_;
         result.type_ = type_;
         result.content_ = content_;
+        result.contentLength_ = contentLength_;
         onBuilt();
         return result;
       }
@@ -469,6 +504,9 @@ public final class MessageProtocol {
         if (!other.getContent().isEmpty()) {
           content_ = other.content_;
           onChanged();
+        }
+        if (other.getContentLength() != 0L) {
+          setContentLength(other.getContentLength());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -617,6 +655,32 @@ public final class MessageProtocol {
         onChanged();
         return this;
       }
+
+      private long contentLength_ ;
+      /**
+       * <code>int64 content_length = 4;</code>
+       */
+      public long getContentLength() {
+        return contentLength_;
+      }
+      /**
+       * <code>int64 content_length = 4;</code>
+       */
+      public Builder setContentLength(long value) {
+        
+        contentLength_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int64 content_length = 4;</code>
+       */
+      public Builder clearContentLength() {
+        
+        contentLength_ = 0L;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFieldsProto3(unknownFields);
@@ -681,9 +745,10 @@ public final class MessageProtocol {
   static {
     java.lang.String[] descriptorData = {
       "\n\025MessageProtocol.proto\022\020fanjh.mine.prot" +
-      "o\"9\n\014MessageProto\022\n\n\002id\030\001 \001(\003\022\014\n\004type\030\002 " +
-      "\001(\005\022\017\n\007content\030\003 \001(\tB#\n\020fanjh.mine.proto" +
-      "B\017MessageProtocolb\006proto3"
+      "o\"Q\n\014MessageProto\022\n\n\002id\030\001 \001(\003\022\014\n\004type\030\002 " +
+      "\001(\005\022\017\n\007content\030\003 \001(\t\022\026\n\016content_length\030\004" +
+      " \001(\003B#\n\020fanjh.mine.protoB\017MessageProtoco" +
+      "lb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -702,7 +767,7 @@ public final class MessageProtocol {
     internal_static_fanjh_mine_proto_MessageProto_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_fanjh_mine_proto_MessageProto_descriptor,
-        new java.lang.String[] { "Id", "Type", "Content", });
+        new java.lang.String[] { "Id", "Type", "Content", "ContentLength", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

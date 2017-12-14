@@ -41,6 +41,25 @@ public class FriendDAO {
 		
 		return null != resultSet && resultSet.next();
 	}
+	
+	public FriendApply getExistFriendApply(Connection connection, int applyID, int confirmID) throws Exception{
+		
+		String sql = "select * from friend_apply where (apply_id = ? and confirm_id = ?) or (apply_id = ? and confirm_id = ?)";
+		
+		PreparedStatement preparedStatement = connection.prepareStatement(sql);
+		preparedStatement.setInt(1, applyID);
+		preparedStatement.setInt(2, confirmID);
+		preparedStatement.setInt(3, confirmID);
+		preparedStatement.setInt(4, applyID);
+		
+		ResultSet resultSet = preparedStatement.executeQuery();
+		
+		if(null != resultSet && resultSet.next()) {
+			FriendApply friendApply = parseFriendApply(resultSet);
+			return friendApply;
+		}
+		return null;
+	}
 
 	public int addFriendApply(Connection connection, int applyID, int confirmID, String content) throws Exception {
 

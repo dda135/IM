@@ -9,7 +9,6 @@ import mine.fanjh.MainApplication;
 public class IMer {
 	
 	private volatile static boolean isStart = false;
-	private MainApplication mainApplication;
 	
 	public IMer() {
 		super();
@@ -25,8 +24,7 @@ public class IMer {
 					return;
 				}
 				isStart = true;
-				mainApplication = new MainApplication();
-				mainApplication.start();
+				MainApplication.start();
 			}
 		}).start();
 		System.out.println("IM start!");
