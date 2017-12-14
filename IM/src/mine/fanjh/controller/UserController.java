@@ -274,7 +274,7 @@ public class UserController{
 			String fileName = file.getOriginalFilename();
 
 			newFilename = UUID.randomUUID().toString() + fileName.substring(fileName.lastIndexOf('.'));
-			String realPath = req.getSession().getServletContext().getRealPath("userAvator/");
+			String realPath = "userAvator/";
 
 			File temp = new File(realPath, newFilename);
 			if (!temp.getParentFile().exists()) {
