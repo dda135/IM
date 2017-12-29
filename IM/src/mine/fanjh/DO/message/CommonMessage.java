@@ -43,6 +43,9 @@ public class CommonMessage {
 				case BaseMessage.TYPE_IMAGE:
 					message = gson.fromJson(content, ImageMessage.class);
 					break;
+				case BaseMessage.TYPE_RECORD:
+					message = gson.fromJson(content, RecordMessage.class);
+					break;
 				default:
 					message = baseMessage;
 					break;
