@@ -25,6 +25,7 @@ import mine.fanjh.DO.message.ApplySuccessMessage;
 import mine.fanjh.DO.message.BaseMessage;
 import mine.fanjh.DO.message.CommonMessage;
 import mine.fanjh.DO.message.ImageMessage;
+import mine.fanjh.DO.message.RecordMessage;
 import mine.fanjh.utils.Const;
 import mine.fanjh.utils.JDBC;
 import mine.fanjh.utils.TextUtils;
@@ -210,11 +211,15 @@ public class ReceiverThread extends Thread {
 			transmitMessage(arrivedMessage.receiver_id, newProto);
 			senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
 			break;
+		case BaseMessage.TYPE_RECORD:
+			MessageProto recordProto = handleReceiverRecordMessage(messageProto,arrivedMessage, fileBytes);
+			transmitMessage(arrivedMessage.receiver_id, recordProto);
+			senderThread.sendMessage(sendMessage(ProtoType.SEND_ACK, messageProto.getId(), ""));
+			break;
 		default:
 			break;
 		}
 		// 失败的话应该导致客户端发送超时
-
 	}
 
 	private MessageProto getMessageProto(long id, int type, String content) {
@@ -349,6 +354,62 @@ public class ReceiverThread extends Thread {
 				message.width = imageMessage.width;
 				message.height = imageMessage.height;
 				message.imageUrl = Const.IMAGE_PREFIX + "sendImage/" + newFilename;
+				
+				arrivedMessage.content = new Gson().toJson(message);
+				
+				MessageProto proto = MessageProto.newBuilder().
+						setId(messageProto.getId()).
+						setType(ProtoType.MESSAGE).
+						setContent(new Gson().toJson(arrivedMessage)).
+						build();
+				
+				return proto;
+				
+			} catch (Exception e) {
+				// TODO: handle exception
+				e.printStackTrace();
+			}
+
+		}
+		return null;
+	}
+	
+	/** 
+	 * 处理录音消息并返回
+	 * @param messageProto
+	 * @param arrivedMessage
+	 * @param fileBytes
+	 * @return
+	 */
+	private MessageProto handleReceiverRecordMessage(MessageProto messageProto,CommonMessage arrivedMessage, byte[] fileBytes) {
+
+		if (fileBytes != null) {
+			try {
+				System.out.println("content_length--->"+fileBytes.length);
+				
+				RecordMessage recordMessage = (RecordMessage) arrivedMessage.getMessage();
+
+				String fileName = recordMessage.fileName;
+
+				String newFilename = UUID.randomUUID().toString() + fileName.substring(fileName.lastIndexOf('.'));
+				String realPath = System.getProperty("catalina.home") + "/webapps/IM/sendRecord/";
+				File temp = new File(realPath, newFilename);
+				System.out.println("realPath-->"+temp.getAbsolutePath());
+				if (!temp.getParentFile().exists()) {
+					temp.getParentFile().mkdir();
+				}
+				if (!temp.exists()) {
+					temp.createNewFile();
+				}
+
+				FileOutputStream fos = new FileOutputStream(temp);
+				fos.write(fileBytes);
+				fos.flush();
+				fos.close();
+				
+				RecordMessage message = new RecordMessage();
+				message.recordTime = recordMessage.recordTime;
+				message.recordUrl = Const.IMAGE_PREFIX + "sendRecord/" + newFilename;
 				
 				arrivedMessage.content = new Gson().toJson(message);
 				
