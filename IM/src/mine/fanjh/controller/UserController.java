@@ -314,7 +314,7 @@ public class UserController{
 				newFilename = "userAvator/" + newFilename;
 				isSuccess = userDAO.updateMessage(connection, user.id, newFilename, user.nickname, user.birth, user.sex, user.address);
 			}else {
-				isSuccess = userDAO.updateMessage(connection, user.id, user.nickname, user.birth, user.sex, user.address);
+				isSuccess = userDAO.updateMessage(connection, user.id,user.nickname, user.birth, user.sex, user.address);
 			}
 			connection.commit();
 			if(isSuccess) {

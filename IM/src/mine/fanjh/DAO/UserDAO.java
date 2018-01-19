@@ -100,11 +100,11 @@ public boolean updateMessage(Connection connection,int userID,String nickname,St
 		String sql = "update user set nickname = ?, nickname = ?, birth = ?, sex = ?, address = ? where id = ?";
 
 		PreparedStatement preparedStatement = connection.prepareStatement(sql);
-		preparedStatement.setString(1, nickname);
-		preparedStatement.setString(2, birth);
-		preparedStatement.setString(3, sex);
-		preparedStatement.setString(4, address);
-		preparedStatement.setInt(5, userID);
+		preparedStatement.setString(2, nickname);
+		preparedStatement.setString(3, birth);
+		preparedStatement.setString(4, sex);
+		preparedStatement.setString(5, address);
+		preparedStatement.setInt(6, userID);
 
 		return preparedStatement.executeUpdate() > 0;
 	}
