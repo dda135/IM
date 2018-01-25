@@ -21,7 +21,6 @@ import mine.fanjh.utils.TextUtils;
 @RequestMapping("/search")
 public class SearchController{
 
-
 	@RequestMapping(value = "/searchUser", method = RequestMethod.POST, produces="text/html;charset=UTF-8")
 	@ResponseBody
 	public ResultEntity login(String content) throws Exception {
