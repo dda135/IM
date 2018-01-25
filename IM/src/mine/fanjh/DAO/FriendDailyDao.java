@@ -39,7 +39,7 @@ public boolean insertFriendDailyImage(Connection connection,FriendDaily friendDa
 	 */
 	public boolean insertFriendDailyVideo(Connection connection,FriendDaily friendDaily) throws Exception{
 		
-		String sql = "insert into friendDaily(name,senderId,publishDate,videoFile,content,portrait,imag,dailyTypee) values(?,?,?,?,?,?,?,?)";
+		String sql = "insert into friendDaily(name,senderId,publishDate,videoFile,content,portrait,image,dailyType) values(?,?,?,?,?,?,?,?)";
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
 		prepareStatement.setString(1, friendDaily.name);
 		prepareStatement.setInt(2, friendDaily.senderId);
@@ -143,7 +143,7 @@ public boolean insertFriendDailyImage(Connection connection,FriendDaily friendDa
 		friendDaily.senderId = result.getInt("senderId");
 		friendDaily.pulishDate = result.getString("publishDate");
 		friendDaily.portrait = result.getString("portrait");
-		friendDaily.videoFile = result.getString("videoFile");
+		handleVideoFile(friendDaily,result.getString("videoFile"));
 		friendDaily.content = result.getString("content");
 		handleImg(friendDaily,result.getString("image"));
 		friendDaily.dailyType = result.getInt("dailyType");
@@ -179,5 +179,10 @@ public boolean insertFriendDailyImage(Connection connection,FriendDaily friendDa
 		bean.images = mList;
 	}
 	
-
+	private void handleVideoFile(FriendDailyReturnBean bean,String videoFile) {		
+		if(null != videoFile && !"".equals(videoFile)) {
+		   bean.videoFile = Const.IMAGE_PREFIX + videoFile;
+		}
+	}
+	
 }
